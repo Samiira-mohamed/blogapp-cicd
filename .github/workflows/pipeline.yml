@@ -1,0 +1,40 @@
+name: Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    env:
+      TEST_MONGODB_URI: mongodb://localhost:27017/bloglist-test
+      SECRET: ci-test-secret
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Install backend dependencies
+        run: npm ci
+      - name: Lint backend
+        run: npm run lint
+      - name: Backend tests
+        run: npm test
+      - name: Install frontend dependencies
+        run: npm install --prefix bloglist-frontend
+      - name: Lint frontend
+        run: npm run lint:ui
+      - name: Frontend tests
+        run: npm run test:ui
+      - name: Build frontend
+        run: npm run build --prefix bloglist-frontend
